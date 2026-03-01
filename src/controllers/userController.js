@@ -1,4 +1,5 @@
 import User from "../models/User.js";
+import Patient from "../models/Patient.js";
 import mongoose from "mongoose";
 
 const formatUser = (u) => ({
@@ -57,6 +58,22 @@ export const createUser = async (req, res) => {
       licenseNumber: licenseNumber?.trim() || null,
       clinicId: req.user.clinicId,
     });
+
+    // If role is patient, automatically create and link a Patient record
+    if (role === "patient") {
+      const patient = await Patient.create({
+        name: name.trim(),
+        email: email.toLowerCase().trim(),
+        contact: "n/a",
+        age: 0,
+        gender: "other",
+        clinicId: req.user.clinicId,
+        createdBy: req.user.userId,
+        userId: user._id,
+      });
+      user.patientId = patient._id;
+      await user.save();
+    }
     res.status(201).json(formatUser(user));
   } catch (err) {
     res.status(500).json({ message: err.message });

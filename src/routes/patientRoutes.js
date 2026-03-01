@@ -12,7 +12,7 @@ const router = Router();
 
 router.use(auth);
 
-router.get("/", requireRole("admin", "doctor", "receptionist"), listPatients);
+router.get("/", requireRole("admin", "doctor", "receptionist", "patient"), listPatients);
 router.get("/:id", requireRole("admin", "doctor", "receptionist", "patient"), getPatient);
 router.post("/", requireRole("admin", "receptionist"), createPatient);
 router.patch("/:id", requireRole("admin", "receptionist"), updatePatient);

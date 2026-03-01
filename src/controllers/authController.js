@@ -1,4 +1,5 @@
 import User from "../models/User.js";
+import Patient from "../models/Patient.js";
 import jwt from "jsonwebtoken";
 import { generateAccessToken, generateRefreshToken } from "../utils/token.js";
 
@@ -15,7 +16,7 @@ const formatUser = (u) => ({
 
 export const register = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role, clinicId } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({ message: "Name, email and password are required" });
@@ -33,7 +34,24 @@ export const register = async (req, res) => {
       email,
       password,
       role: allowedRole,
+      clinicId: clinicId || null,
     });
+
+    // If registering as a patient and clinicId is provided, create the Patient record automatically
+    if (allowedRole === "patient" && clinicId) {
+      const patient = await Patient.create({
+        name: name.trim(),
+        email: email.toLowerCase().trim(),
+        contact: "n/a", // Placeholder, user can update later
+        age: 0, // Placeholder
+        gender: "other", // Placeholder
+        clinicId: clinicId,
+        createdBy: user._id,
+        userId: user._id,
+      });
+      user.patientId = patient._id;
+      await user.save();
+    }
 
     const accessToken = generateAccessToken(user._id, user.role, user.clinicId);
     const refreshToken = generateRefreshToken(user._id);
