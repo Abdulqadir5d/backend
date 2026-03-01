@@ -14,11 +14,11 @@ const router = Router();
 
 router.use(auth);
 
-router.post("/symptoms", requireRole("admin", "doctor"), checkSymptoms);
+router.post("/symptoms", requireRole("admin", "doctor", "patient"), checkSymptoms);
 router.post("/explain-prescription", requireRole("admin", "doctor", "receptionist", "patient"), explainPrescriptionApi);
 router.get("/risk-flag/:patientId", requireRole("admin", "doctor"), flagPatientRisks);
 router.get("/analytics-summary", requireRole("admin", "doctor"), analyticsSummary);
 router.post("/interactions", requireRole("admin", "doctor"), checkInteractions);
-router.post("/interpret-lab", requireRole("admin", "doctor"), interpretLabReportApi);
+router.post("/interpret-lab", requireRole("admin", "doctor", "patient"), interpretLabReportApi);
 
 export default router;

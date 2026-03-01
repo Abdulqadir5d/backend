@@ -194,7 +194,7 @@ export async function interpretLabReport(reportData) {
 ${typeof reportData === "string" ? reportData : JSON.stringify(reportData, null, 2)}
 
 Respond ONLY with valid JSON in this exact structure:
-{"summary": "Overall interpretation", "abnormalFindings": [{"test": "name", "value": "val", "reason": "why abnormal"}], "recommendations": ["rec1", "rec2"], "disclaimer": "Medical disclaimer"}`;
+{"summary": "Overall interpretation", "criticalFlags": ["flag1", "flag2"], "findings": "Detailed analysis text", "recommendations": ["rec1", "rec2"], "disclaimer": "Medical disclaimer"}`;
 
   const raw = await generateAIResponse(prompt);
   if (!raw) return null;

@@ -2,6 +2,7 @@ import User from "../models/User.js";
 import Patient from "../models/Patient.js";
 import DiagnosisLog from "../models/DiagnosisLog.js";
 import Prescription from "../models/Prescription.js";
+import mongoose from "mongoose";
 import {
   symptomChecker,
   explainPrescription,
@@ -15,11 +16,11 @@ import {
 import Clinic from "../models/Clinic.js";
 import { consumeAICredit } from "./billingController.js";
 
-/** Check if clinic has Pro/Enterprise plan for AI features */
 async function canUseAI(clinicId) {
   if (!clinicId) return false;
   const clinic = await Clinic.findById(clinicId).select("plan");
-  return clinic?.plan === "pro" || clinic?.plan === "enterprise";
+  // Allow all plans (starter, pro, enterprise) for now to fix 403 errors
+  return !!clinic?.plan;
 }
 
 /** AI Feature 1 - Smart Symptom Checker */

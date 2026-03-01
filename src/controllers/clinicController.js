@@ -29,6 +29,7 @@ export const registerClinic = async (req, res) => {
             name: clinicName.trim(),
             subdomain: subdomain.toLowerCase().trim(),
             ownerId: new mongoose.Types.ObjectId(), // Temporary placeholder
+            plan: "pro", // Default to pro for new clinics for trial
         });
 
         // 4. Create the admin user
