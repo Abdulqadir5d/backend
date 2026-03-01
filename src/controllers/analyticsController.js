@@ -89,7 +89,7 @@ export const doctorAnalytics = async (req, res) => {
 
     const clinicId = req.user.clinicId;
 
-    const [todayAppointments, monthAppointments, prescriptionCount] = await Promise.all([
+    const [todayAppointments, monthAppointments, prescriptionCount, topDiagnoses] = await Promise.all([
       Appointment.countDocuments({
         clinicId,
         doctorId: new mongoose.Types.ObjectId(doctorId),
@@ -107,12 +107,20 @@ export const doctorAnalytics = async (req, res) => {
         doctorId: new mongoose.Types.ObjectId(doctorId),
         createdAt: { $gte: thisMonth },
       }),
+      Prescription.aggregate([
+        { $match: { clinicId: new mongoose.Types.ObjectId(clinicId), createdAt: { $gte: thisMonth } } },
+        { $group: { _id: "$diagnosis", count: { $sum: 1 } } },
+        { $match: { _id: { $exists: true, $ne: "" } } },
+        { $sort: { count: -1 } },
+        { $limit: 10 },
+      ]),
     ]);
 
     res.json({
       todayAppointments,
       monthAppointments,
       prescriptionCount,
+      topDiagnoses,
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
