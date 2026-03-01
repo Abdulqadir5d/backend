@@ -151,7 +151,12 @@ export const analyticsSummary = async (req, res) => {
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
 
-    const clinicId = new mongoose.Types.ObjectId(req.user.clinicId);
+    const clinicIdStr = req.user.clinicId;
+    if (!clinicIdStr) {
+      return res.json({ summary: null, data: { topDiagnoses: [], patientCount: 0, prescriptionsThisMonth: 0 }, aiEnabled: false });
+    }
+
+    const clinicId = new mongoose.Types.ObjectId(clinicIdStr);
 
     const prescriptions = await Prescription.aggregate([
       { $match: { clinicId, createdAt: { $gte: startOfMonth } } },
