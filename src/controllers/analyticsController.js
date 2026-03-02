@@ -19,8 +19,8 @@ export const adminAnalytics = async (req, res) => {
     const lastMonth = startOfMonth(now);
     lastMonth.setMonth(lastMonth.getMonth() - 1);
 
-    const clinicId = new mongoose.Types.ObjectId(req.user.clinicId);
     if (!req.user.clinicId) return res.status(403).json({ message: "No clinic associated" });
+    const clinicId = new mongoose.Types.ObjectId(req.user.clinicId);
 
     const [
       totalPatients,
