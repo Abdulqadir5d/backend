@@ -79,9 +79,10 @@ export const createAppointment = async (req, res) => {
       }
       patientId = user.patientId.toString();
     }
-    if (!patientId || !doctorId || !date || !timeSlot) {
-      return res.status(400).json({ message: "Patient, doctor, date and time slot are required" });
-    }
+    if (!patientId) return res.status(400).json({ message: "Patient is required" });
+    if (!doctorId) return res.status(400).json({ message: "Doctor is required" });
+    if (!date) return res.status(400).json({ message: "Date is required" });
+    if (!timeSlot) return res.status(400).json({ message: "Time slot is required" });
     if (!req.user.clinicId) {
       return res.status(403).json({ message: "Associate with a clinic to create appointments" });
     }

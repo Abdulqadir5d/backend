@@ -66,8 +66,10 @@ export const getPrescription = async (req, res) => {
 export const createPrescription = async (req, res) => {
   try {
     const { patientId, doctorId, appointmentId, diagnosis, medicines, instructions } = req.body;
-    if (!patientId || !doctorId) {
-      return res.status(400).json({ message: "Patient and doctor are required" });
+    if (!patientId) return res.status(400).json({ message: "Patient is required" });
+    if (!doctorId) return res.status(400).json({ message: "Doctor is required" });
+    if (!medicines || medicines.length === 0) {
+      return res.status(400).json({ message: "At least one medicine is required" });
     }
     const meds = Array.isArray(medicines)
       ? medicines.filter((m) => m?.name && m?.dosage).map((m) => ({
@@ -85,6 +87,7 @@ export const createPrescription = async (req, res) => {
       diagnosis: diagnosis?.trim() || "",
       medicines: meds,
       instructions: instructions?.trim() || "",
+      clinicId: req.user.clinicId,
     });
     const populated = await Prescription.findById(prescription._id)
       .populate("patientId", "name age gender contact")
