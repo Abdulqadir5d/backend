@@ -21,6 +21,7 @@ async function seed() {
     password: "admin123",
     role: "admin",
     subscriptionPlan: "pro",
+    isApproved: true,
   });
   console.log("Admin created:", user.email);
   process.exit(0);
