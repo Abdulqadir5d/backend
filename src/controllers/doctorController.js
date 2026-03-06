@@ -8,7 +8,7 @@ export const listDoctors = async (req, res) => {
       .sort({ name: 1 })
       .lean();
     res.json({
-      doctors: doctors.map((d) => ({ id: d._id, name: d.name, email: d.email, specialization: d.specialization })),
+      doctors: doctors.map((d) => ({ _id: d._id, name: d.name, email: d.email, specialization: d.specialization })),
     });
   } catch (err) {
     res.status(500).json({ message: err.message });

@@ -24,7 +24,7 @@ export const register = async (req, res) => {
       return res.status(400).json({ message: "Name, email and password are required" });
     }
 
-    const allowedRole = ["patient", "doctor", "receptionist", "nurse", "lab_technician", "pharmacist"].includes(role) ? role : "patient";
+    const allowedRole = ["patient", "doctor", "receptionist", "nurse", "lab_technician", "pharmacist", "admin"].includes(role) ? role : "patient";
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
