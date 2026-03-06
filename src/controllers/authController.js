@@ -2,6 +2,8 @@ import User from "../models/User.js";
 import Patient from "../models/Patient.js";
 import jwt from "jsonwebtoken";
 import { generateAccessToken, generateRefreshToken } from "../utils/token.js";
+import Clinic from "../models/Clinic.js";
+import { createNotification } from "./notificationController.js";
 
 const formatUser = (u) => ({
   id: u._id,
@@ -22,11 +24,17 @@ export const register = async (req, res) => {
       return res.status(400).json({ message: "Name, email and password are required" });
     }
 
-    const allowedRole = ["patient", "doctor", "receptionist"].includes(role) ? role : "patient";
+    const allowedRole = ["patient", "doctor", "receptionist", "nurse", "lab_technician", "pharmacist"].includes(role) ? role : "patient";
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(409).json({ message: "Email already in use" });
+    }
+
+    let finalClinicId = clinicId;
+    if (!finalClinicId) {
+      const mainClinic = await Clinic.findOne().sort({ createdAt: 1 });
+      if (mainClinic) finalClinicId = mainClinic._id;
     }
 
     const user = await User.create({
@@ -34,18 +42,34 @@ export const register = async (req, res) => {
       email,
       password,
       role: allowedRole,
-      clinicId: clinicId || null,
+      clinicId: finalClinicId,
+      isApproved: allowedRole === "patient", // Only patients are auto-approved
     });
 
+    // Notify admins if approval is required
+    if (!user.isApproved) {
+      const admins = await User.find({ role: "admin", clinicId: finalClinicId });
+      for (const admin of admins) {
+        await createNotification({
+          userId: admin._id,
+          title: "New Staff Registration",
+          message: `${name} (${role}) is pending approval for active clinical duty.`,
+          type: "system",
+          priority: "medium",
+          clinicId: finalClinicId,
+        });
+      }
+    }
+
     // If registering as a patient and clinicId is provided, create the Patient record automatically
-    if (allowedRole === "patient" && clinicId) {
+    if (allowedRole === "patient" && finalClinicId) {
       const patient = await Patient.create({
         name: name.trim(),
         email: email.toLowerCase().trim(),
         contact: "n/a", // Placeholder, user can update later
         age: 0, // Placeholder
         gender: "other", // Placeholder
-        clinicId: clinicId,
+        clinicId: finalClinicId,
         createdBy: user._id,
         userId: user._id,
       });
@@ -80,6 +104,10 @@ export const login = async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    if (!user.isApproved) {
+      return res.status(403).json({ message: "Your account is pending administrator approval." });
     }
 
     const isMatch = await user.comparePassword(password);

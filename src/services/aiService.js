@@ -186,7 +186,6 @@ Respond ONLY with valid JSON in this exact structure:
   }
 }
 
-
 /** AI Feature 6 - Lab Report Interpretation */
 export async function interpretLabReport(reportData) {
   if (!reportData) return null;
@@ -204,6 +203,21 @@ Respond ONLY with valid JSON in this exact structure:
   } catch {
     return null;
   }
+}
+
+/** AI Feature 7 - General Clinical Chat */
+export async function generalClinicalChat(query, context = {}) {
+  const prompt = `As a high-precision medical AI assistant (HealthAI), provide a professional, evidence-based response to the following query. 
+Context: ${JSON.stringify(context)}
+Query: ${query}
+
+Guidelines:
+- Maintain a professional, empathetic clinical tone.
+- If the query is non-medical, politely redirect to clinical topics.
+- Use clear, structured formatting (bullet points where appropriate).
+- Always include a disclaimer at the end.`;
+
+  return await generateAIResponse(prompt);
 }
 
 export { AI_AVAILABLE };

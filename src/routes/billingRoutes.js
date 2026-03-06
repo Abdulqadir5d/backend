@@ -8,7 +8,7 @@ const router = Router();
 router.use(auth);
 
 // Invoices (Staff only)
-router.get("/", requireRole("admin", "doctor", "receptionist"), listInvoices);
+router.get("/", requireRole("admin", "doctor", "receptionist", "nurse", "pharmacist", "lab_technician"), listInvoices);
 router.post("/", requireRole("admin", "doctor", "receptionist"), createInvoice);
 router.patch("/:id/status", requireRole("admin", "doctor", "receptionist"), updateInvoiceStatus);
 

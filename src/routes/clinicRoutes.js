@@ -6,7 +6,7 @@ import { requireRole } from "../middlewares/auth.js";
 const router = Router();
 
 // Public onboarding & branding
-router.post("/register", registerClinic);
+// router.post("/register", registerClinic); // Disabled for single-clinic model
 router.get("/public/:subdomain", getClinicBySubdomain);
 
 

@@ -14,9 +14,9 @@ const router = Router();
 
 router.use(auth);
 
-router.get("/", requireRole("admin", "doctor", "receptionist", "patient"), listAppointments);
-router.get("/:id", requireRole("admin", "doctor", "receptionist", "patient"), getAppointment);
-router.post("/", requireRole("admin", "doctor", "receptionist", "patient"), validate(createAppointmentSchema), createAppointment);
-router.patch("/:id", requireRole("admin", "doctor", "receptionist"), validate(updateAppointmentSchema), updateAppointment);
+router.get("/", requireRole("admin", "doctor", "receptionist", "patient", "nurse", "pharmacist", "lab_technician"), listAppointments);
+router.get("/:id", requireRole("admin", "doctor", "receptionist", "patient", "nurse", "pharmacist", "lab_technician"), getAppointment);
+router.post("/", requireRole("admin", "doctor", "receptionist", "patient", "nurse"), validate(createAppointmentSchema), createAppointment);
+router.patch("/:id", requireRole("admin", "doctor", "receptionist", "nurse"), validate(updateAppointmentSchema), updateAppointment);
 
 export default router;

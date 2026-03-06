@@ -7,6 +7,6 @@ const router = Router();
 
 router.use(auth);
 
-router.get("/patient/:patientId", requireRole("admin", "doctor", "receptionist", "patient"), getPatientHistory);
+router.get("/patient/:patientId", requireRole("admin", "doctor", "receptionist", "patient", "nurse", "pharmacist", "lab_technician"), getPatientHistory);
 
 export default router;

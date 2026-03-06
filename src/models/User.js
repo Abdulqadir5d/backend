@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 
-export const ROLES = ["admin", "doctor", "receptionist", "patient"];
+export const ROLES = ["admin", "doctor", "receptionist", "patient", "nurse", "pharmacist", "lab_technician"];
 export const SUBSCRIPTION_PLANS = ["free", "pro"];
 
 const userSchema = new mongoose.Schema(
@@ -33,6 +33,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: SUBSCRIPTION_PLANS,
       default: "free",
+    },
+    isApproved: {
+      type: Boolean,
+      default: false,
     },
     refreshToken: {
       type: String,

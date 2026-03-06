@@ -1,6 +1,7 @@
 import User from "../models/User.js";
 import Patient from "../models/Patient.js";
 import mongoose from "mongoose";
+import { createNotification } from "./notificationController.js";
 
 const formatUser = (u) => ({
   id: u._id,
@@ -8,10 +9,72 @@ const formatUser = (u) => ({
   email: u.email,
   role: u.role,
   subscriptionPlan: u.subscriptionPlan,
+  isApproved: u.isApproved,
   specialization: u.specialization,
   licenseNumber: u.licenseNumber,
   createdAt: u.createdAt,
 });
+
+export const approveUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findOneAndUpdate(
+      { _id: id, clinicId: req.user.clinicId },
+      { isApproved: true },
+      { new: true }
+    );
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    await createNotification({
+      userId: user._id,
+      title: "Account Approved",
+      message: "Your account has been approved by the administrator. You now have full access to clinical features.",
+      type: "system",
+      priority: "high",
+      clinicId: req.user.clinicId,
+    });
+
+    res.json(formatUser(user));
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+export const suspendUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findOneAndUpdate(
+      { _id: id, clinicId: req.user.clinicId },
+      { isApproved: false },
+      { new: true }
+    );
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    await createNotification({
+      userId: user._id,
+      title: "Account Suspended",
+      message: "Your clinical access has been suspended. Please contact the administrator for details.",
+      type: "system",
+      priority: "high",
+      clinicId: req.user.clinicId,
+    });
+
+    res.json(formatUser(user));
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+export const deleteUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findOneAndDelete({ _id: id, clinicId: req.user.clinicId });
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.json({ message: "User deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
 
 export const listUsers = async (req, res) => {
   try {

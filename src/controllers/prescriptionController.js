@@ -2,6 +2,7 @@ import Prescription from "../models/Prescription.js";
 import User from "../models/User.js";
 import { logAction } from "../utils/auditLogger.js";
 import { explainPrescription } from "../services/aiService.js";
+import { createNotification } from "./notificationController.js";
 import mongoose from "mongoose";
 
 export const listPrescriptions = async (req, res) => {
@@ -95,6 +96,35 @@ export const createPrescription = async (req, res) => {
       .populate("appointmentId")
       .lean();
     await logAction(req, "CREATE_PRESCRIPTION", "Prescription", prescription._id);
+
+    // Notify Pharmacists
+    const pharmacists = await User.find({ clinicId: req.user.clinicId, role: "pharmacist" });
+    for (const ph of pharmacists) {
+      await createNotification({
+        userId: ph._id,
+        title: "New Prescription Fulfillment Request",
+        message: `New prescription issued for ${populated.patientId.name}. Fulfillment pending.`,
+        type: "prescription",
+        priority: "medium",
+        relatedId: prescription._id,
+        clinicId: req.user.clinicId
+      });
+    }
+
+    // Notify Patient
+    const patientUser = await User.findOne({ patientId: populated.patientId._id, role: "patient" });
+    if (patientUser) {
+      await createNotification({
+        userId: patientUser._id,
+        title: "New Prescription Issued",
+        message: `A new prescription has been issued following your visit with Dr. ${populated.doctorId.name}`,
+        type: "prescription",
+        priority: "medium",
+        relatedId: prescription._id,
+        clinicId: req.user.clinicId
+      });
+    }
+
     res.status(201).json(populated);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -172,6 +202,51 @@ export const generateExplanation = async (req, res) => {
       .populate("doctorId", "name email specialization")
       .lean();
     res.json(updated);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+export const updateFulfillmentStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid prescription ID" });
+    }
+
+    const prescription = await Prescription.findOneAndUpdate(
+      { _id: id, clinicId: req.user.clinicId },
+      { fulfillmentStatus: status },
+      { new: true, runValidators: true }
+    )
+      .populate("patientId", "name age gender contact")
+      .populate("doctorId", "name email specialization")
+      .lean();
+
+    if (!prescription) {
+      return res.status(404).json({ message: "Prescription not found" });
+    }
+
+    await logAction(req, "UPDATE_FULFILLMENT_STATUS", "Prescription", id);
+
+    if (status === "processed") {
+      const patientUser = await User.findOne({ patientId: prescription.patientId._id, role: "patient" });
+      if (patientUser) {
+        await createNotification({
+          userId: patientUser._id,
+          title: "Prescription Ready for Pickup",
+          message: `Your prescription #${id.slice(-6).toUpperCase()} has been processed and is ready at the pharmacy.`,
+          type: "prescription",
+          priority: "high",
+          relatedId: prescription._id,
+          clinicId: req.user.clinicId
+        });
+      }
+    }
+
+    res.json(prescription);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

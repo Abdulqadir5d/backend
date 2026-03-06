@@ -2,6 +2,8 @@ import Patient from "../models/Patient.js";
 import User from "../models/User.js";
 import Appointment from "../models/Appointment.js";
 import Prescription from "../models/Prescription.js";
+import LabReport from "../models/LabReport.js";
+import Vitals from "../models/Vitals.js";
 import mongoose from "mongoose";
 
 function startOfMonth(d) {
@@ -148,6 +150,83 @@ export const receptionistAnalytics = async (req, res) => {
     ]);
 
     res.json({ todayAppointments, totalPatients });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+/** Nurse analytics */
+export const nurseAnalytics = async (req, res) => {
+  try {
+    const clinicId = req.user.clinicId;
+    const now = new Date();
+    const todayStart = new Date(now.setHours(0, 0, 0, 0));
+    const todayEnd = new Date(now.setDate(now.getDate() + 1));
+
+    const [todayAppointments, vitalsToday] = await Promise.all([
+      Appointment.countDocuments({ clinicId, date: { $gte: todayStart, $lt: todayEnd }, status: { $ne: "cancelled" } }),
+      Vitals.countDocuments({ clinicId, createdAt: { $gte: todayStart } })
+    ]);
+
+    res.json({ todayAppointments, vitalsToday });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+/** Pharmacist analytics */
+export const pharmacistAnalytics = async (req, res) => {
+  try {
+    const clinicId = req.user.clinicId;
+    const pendingRx = await Prescription.countDocuments({ clinicId, fulfillmentStatus: "pending" });
+    const processedToday = await Prescription.countDocuments({
+      clinicId,
+      fulfillmentStatus: "processed",
+      updatedAt: { $gte: new Date(new Date().setHours(0, 0, 0, 0)) }
+    });
+
+    res.json({ pendingRx, processedToday });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+/** Lab analytics */
+export const labAnalytics = async (req, res) => {
+  try {
+    const clinicId = req.user.clinicId;
+    const pendingLabs = await LabReport.countDocuments({ clinicId, status: { $ne: "completed" } });
+    const completedToday = await LabReport.countDocuments({
+      clinicId,
+      status: "completed",
+      updatedAt: { $gte: new Date(new Date().setHours(0, 0, 0, 0)) }
+    });
+
+    res.json({ pendingLabs, completedToday });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+/** Patient analytics */
+export const patientAnalytics = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const user = await User.findById(userId).select("patientId").lean();
+    if (!user?.patientId) return res.json({ upcomingAppointments: 0, activePrescriptions: 0, latestLabStatus: "N/A" });
+
+    const patientId = user.patientId;
+    const [upcomingAppointments, activePrescriptions, latestLab] = await Promise.all([
+      Appointment.countDocuments({ patientId, date: { $gte: new Date() }, status: { $in: ["pending", "confirmed"] } }),
+      Prescription.countDocuments({ patientId, fulfillmentStatus: "pending" }),
+      LabReport.findOne({ patientId }).sort({ createdAt: -1 }).select("status").lean()
+    ]);
+
+    res.json({
+      upcomingAppointments,
+      activePrescriptions,
+      latestLabStatus: latestLab?.status || "None"
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

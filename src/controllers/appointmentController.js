@@ -1,6 +1,7 @@
 import Appointment from "../models/Appointment.js";
 import User from "../models/User.js";
 import mongoose from "mongoose";
+import { createNotification } from "./notificationController.js";
 
 export const listAppointments = async (req, res) => {
   try {
@@ -101,6 +102,18 @@ export const createAppointment = async (req, res) => {
       .populate("doctorId", "name email specialization")
       .populate("createdBy", "name email")
       .lean();
+
+    // Notify Doctor
+    await createNotification({
+      userId: doctorId,
+      title: "New Appointment Request",
+      message: `A new appointment has been scheduled for ${populated.patientId.name} on ${new Date(date).toLocaleDateString()}`,
+      type: "appointment",
+      priority: "medium",
+      relatedId: appointment._id,
+      clinicId: req.user.clinicId
+    });
+
     res.status(201).json(populated);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -136,6 +149,21 @@ export const updateAppointment = async (req, res) => {
     if (!appointment) {
       return res.status(404).json({ message: "Appointment not found in your clinic" });
     }
+
+    // Notify Patient if they have a user account
+    const patientUser = await User.findOne({ patientId: appointment.patientId._id, role: "patient" });
+    if (patientUser) {
+      await createNotification({
+        userId: patientUser._id,
+        title: `Appointment ${status.toUpperCase()}`,
+        message: `Your appointment on ${new Date(appointment.date).toLocaleDateString()} has been ${status}`,
+        type: "appointment",
+        priority: status === "cancelled" ? "high" : "medium",
+        relatedId: appointment._id,
+        clinicId: req.user.clinicId
+      });
+    }
+
     res.json(appointment);
   } catch (err) {
     res.status(500).json({ message: err.message });

@@ -66,6 +66,11 @@ const prescriptionSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    fulfillmentStatus: {
+      type: String,
+      enum: ["pending", "processed", "partially-filled", "out-of-stock", "cancelled"],
+      default: "pending",
+    },
     // Multi-tenancy
     clinicId: {
       type: mongoose.Schema.Types.ObjectId,

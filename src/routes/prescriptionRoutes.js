@@ -7,6 +7,7 @@ import {
   createPrescription,
   updatePrescription,
   generateExplanation,
+  updateFulfillmentStatus,
 } from "../controllers/prescriptionController.js";
 
 import { validate } from "../middlewares/validate.js";
@@ -16,10 +17,11 @@ const router = Router();
 
 router.use(auth);
 
-router.get("/", requireRole("admin", "doctor", "receptionist", "patient"), listPrescriptions);
-router.get("/:id", requireRole("admin", "doctor", "receptionist", "patient"), getPrescription);
+router.get("/", requireRole("admin", "doctor", "receptionist", "patient", "pharmacist", "nurse", "lab_technician"), listPrescriptions);
+router.get("/:id", requireRole("admin", "doctor", "receptionist", "patient", "pharmacist", "nurse", "lab_technician"), getPrescription);
 router.post("/", requireRole("admin", "doctor"), validate(createPrescriptionSchema), createPrescription);
 router.post("/:id/generate-explanation", requireRole("admin", "doctor"), generateExplanation);
 router.patch("/:id", requireRole("admin", "doctor"), validate(updatePrescriptionSchema), updatePrescription);
+router.patch("/:id/fulfillment", requireRole("admin", "pharmacist"), updateFulfillmentStatus);
 
 export default router;

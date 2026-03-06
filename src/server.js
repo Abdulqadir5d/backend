@@ -16,6 +16,9 @@ import clinicRoutes from "./routes/clinicRoutes.js";
 import emrRoutes from "./routes/emrRoutes.js";
 import billingRoutes from "./routes/billingRoutes.js";
 import searchRoutes from "./routes/searchRoutes.js";
+import vitalsRoutes from "./routes/vitalsRoutes.js";
+import labRoutes from "./routes/labRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
 import auth from "./middlewares/auth.js";
 import { requireRole } from "./middlewares/auth.js";
 import { scopeMiddleware } from "./middlewares/scopeMiddleware.js";
@@ -45,6 +48,9 @@ app.use("/api/clinics", clinicRoutes);
 app.use("/api/emr-templates", emrRoutes);
 app.use("/api/billing", billingRoutes);
 app.use("/api/search", searchRoutes);
+app.use("/api/vitals", vitalsRoutes);
+app.use("/api/labs", labRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 app.get("/api/prescriptions/:id/pdf", auth, requireRole("admin", "doctor", "receptionist", "patient"), getPrescriptionHtml);
 

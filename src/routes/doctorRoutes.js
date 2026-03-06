@@ -6,7 +6,7 @@ import { listDoctors } from "../controllers/doctorController.js";
 const router = Router();
 
 router.use(auth);
-router.use(requireRole("admin", "doctor", "receptionist", "patient"));
+router.use(requireRole("admin", "doctor", "receptionist", "patient", "nurse"));
 
 router.get("/", listDoctors);
 

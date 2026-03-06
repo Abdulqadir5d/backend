@@ -11,6 +11,7 @@ import {
   predictiveAnalytics,
   checkDrugInteractions,
   interpretLabReport,
+  generalClinicalChat,
 } from "../services/aiService.js";
 
 import Clinic from "../models/Clinic.js";
@@ -221,6 +222,31 @@ export const interpretLabReportApi = async (req, res) => {
     const result = await interpretLabReport(reportData);
     if (result) await consumeAICredit(req.user.clinicId);
     res.json(result);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+/** AI Feature 7 - General Clinical Chat API */
+export const generalChat = async (req, res) => {
+  try {
+    const hasPro = await canUseAI(req.user.clinicId);
+    const { query, context } = req.body;
+
+    if (!query) {
+      return res.status(400).json({ message: "Query is required" });
+    }
+
+    const response = await generalClinicalChat(query, {
+      userRole: req.user.role,
+      ...context
+    });
+
+    if (hasPro && response) {
+      await consumeAICredit(req.user.clinicId);
+    }
+
+    res.json({ response, aiEnabled: hasPro });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
